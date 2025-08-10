@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание Ивентов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(249, 115, 22, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            color: #0f172a;
+            letter-spacing: -1px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .time-stats-section {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .current-time-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .current-time-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+        }
+
+        .time-display {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .time-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-mini {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .stat-mini:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-mini.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .stat-mini.upcoming {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-color: #10b981;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .events-section {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 2px;
+            margin-right: 1rem;
+        }
+
+        .events-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .event-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto auto;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.25rem;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .event-row:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-row.active {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .event-row.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #3b82f6;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .event-row.completed {
+            opacity: 0.6;
+            background: #f8fafc;
+        }
+
+        .event-row.upcoming {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-color: #10b981;
+        }
+
+        .event-icon {
+            font-size: 2rem;
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-info {
+            flex: 1;
+        }
+
+        .event-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .event-type {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .time-info {
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .time-main {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .time-sub {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .duration-badge {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .event-row.active .duration-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #1e40af;
+        }
+
+        .event-row.upcoming .duration-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #047857;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-indicator.active {
+            background: #3b82f6;
+            animation: pulse-status 2s infinite;
+        }
+
+        .status-indicator.completed {
+            background: #64748b;
+        }
+
+        .status-indicator.upcoming {
+            background: #10b981;
+        }
+
+        @keyframes pulse-status {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .countdown-info {
+            text-align: right;
+            min-width: 120px;
+        }
+
+        .countdown-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #dc2626;
+        }
+
+        .event-row.active .countdown-value {
+            color: #1d4ed8;
+        }
+
+        .countdown-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.25rem;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            background: #3b82f6;
+            border-radius: 0 0 16px 16px;
+            transition: width 1s ease;
+        }
+
+        @media (max-width: 1024px) {
+            .time-stats-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header h1 { font-size: 2.5rem; }
+            
+            .event-row {
+                grid-template-columns: auto 1fr;
+                gap: 1rem;
+            }
+            
+            .time-info, .duration-badge, .countdown-info {
+                display: none;
+            }
+            
+            .quick-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Расписание Ивентов</h1>
+            <p>Отслеживайте события в удобном табличном формате</p>
+        </div>
+
+        <div class="time-stats-section">
+            <div class="current-time-card">
+                <div class="time-display" id="currentTime"></div>
+                <div class="time-label">Московское время</div>
+            </div>
+            
+            <div class="quick-stats" id="quickStats"></div>
+        </div>
+
+        <div class="events-section">
+            <div class="section-title">📅 События дня</div>
+            <div class="events-grid" id="eventsGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        const events = [
+            { title: 'Монолитный взрыв', server: '6:15', msk: '7:15', type: 'monolith', icon: '💥', duration: 15 },
+            { title: 'Илюзионнист', server: '7:00', msk: '8:00', type: 'illusionist', icon: '🪄', duration: 25 },
+            { title: 'Монолитный взрыв', server: '8:15', msk: '9:15', type: 'monolith', icon: '💥', duration: 15 },
+            { title: 'Золотой блок', server: '9:00', msk: '10:00', type: 'golden', icon: '✨', duration: 30 },
+            { title: 'Монолитный взрыв', server: '14:00:45', msk: '15:00:45', type: 'monolith', icon: '💥', duration: 15 },
+            { title: 'Золотой блок', server: '15:00', msk: '16:00', type: 'golden', icon: '✨', duration: 15 },
+            { title: 'Охота', server: '17:00', msk: '18:00', type: 'hunt', icon: '🏹', duration: 30 },
+            { title: 'Монолитный взрыв', server: '18:15', msk: '19:15', type: 'monolith', icon: '💥', duration: 15 },
+            { title: 'Снеговик', server: '19:00', msk: '20:00', type: 'snowman', icon: '⛄', duration: 20 },
+            { title: 'Охота', server: '23:00', msk: '00:00', type: 'hunt', icon: '🏹', duration: 30 },
+            { title: 'Монолитный взрыв', server: '00:15', msk: '01:15', type: 'monolith', icon: '💥', duration: 15},
+            { title: 'Снеговик/Бомбермен', server: '01:00', msk: '02:00', type: 'snowman_bombman', icon: '⛄/💣', duration: 30 },
+        ];
+
+        function parseTime(timeStr) {
+            const parts = timeStr.split(':');
+            const hours = parseInt(parts[0]);
+            const minutes = parseInt(parts[1]);
+            const seconds = parts[2] ? parseInt(parts[2]) : 0;
+            return { hours, minutes, seconds };
+        }
+
+        function getEventStatus(mskTime, duration) {
+            const now = new Date();
+            const currentHours = now.getHours();
+            const currentMinutes = now.getMinutes();
+            const currentSeconds = now.getSeconds();
+            
+            const eventTime = parseTime(mskTime);
+            const currentTotalMinutes = currentHours * 60 + currentMinutes + currentSeconds / 60;
+            const eventTotalMinutes = eventTime.hours * 60 + eventTime.minutes + eventTime.seconds / 60;
+            const eventEndMinutes = eventTotalMinutes + duration;
+            
+            if (currentTotalMinutes >= eventTotalMinutes && currentTotalMinutes <= eventEndMinutes) {
+                return 'active';
+            } else if (currentTotalMinutes > eventEndMinutes) {
+                return 'completed';
+            } else {
+                return 'upcoming';
+            }
+        }
+
+        function getProgress(mskTime, duration) {
+            const now = new Date();
+            const eventTime = parseTime(mskTime);
+            const currentHours = now.getHours();
+            const currentMinutes = now.getMinutes();
+            const currentSeconds = now.getSeconds();
+            
+            const currentTotalMinutes = currentHours * 60 + currentMinutes + currentSeconds / 60;
+            const eventTotalMinutes = eventTime.hours * 60 + eventTime.minutes + eventTime.seconds / 60;
+            
+            if (currentTotalMinutes < eventTotalMinutes) return 0;
+            
+            const elapsed = currentTotalMinutes - eventTotalMinutes;
+            const progress = Math.min((elapsed / duration) * 100, 100);
+            
+            return progress;
+        }
+
+        function getNextEventTime(mskTime) {
+            const now = new Date();
+            const eventTime = parseTime(mskTime);
+            
+            const eventDate = new Date();
+            eventDate.setHours(eventTime.hours, eventTime.minutes, eventTime.seconds || 0, 0);
+            
+            if (eventDate < now) {
+                eventDate.setDate(eventDate.getDate() + 1);
+            }
+            
+            return Math.ceil((eventDate - now) / (1000 * 60));
+        }
+
+        function formatCountdown(minutes) {
+            if (minutes < 60) {
+                return `${minutes}м`;
+            }
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}ч ${mins}м`;
+        }
+
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                timeZone: 'Europe/Moscow'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        function updateQuickStats() {
+            const stats = events.reduce((acc, event) => {
+                const status = getEventStatus(event.msk, event.duration);
+                acc[status] = (acc[status] || 0) + 1;
+                return acc;
+            }, {});
+
+            const statsHtml = `
+                <div class="stat-mini active">
+                    <div class="stat-number">${stats.active || 0}</div>
+                    <div class="stat-label">Активные</div>
+                </div>
+                <div class="stat-mini upcoming">
+                    <div class="stat-number">${stats.upcoming || 0}</div>
+                    <div class="stat-label">Предстоящие</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-number">${stats.completed || 0}</div>
+                    <div class="stat-label">Завершенные</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-number">${events.length}</div>
+                    <div class="stat-label">Всего</div>
+                </div>
+            `;
+            
+            document.getElementById('quickStats').innerHTML = statsHtml;
+        }
+
+        function renderEvents() {
+            const sortedEvents = [...events].sort((a, b) => {
+                const aTime = parseTime(a.msk);
+                const bTime = parseTime(b.msk);
+                return (aTime.hours * 60 + aTime.minutes) - (bTime.hours * 60 + bTime.minutes);
+            });
+
+            const eventsHtml = sortedEvents.map(event => {
+                const status = getEventStatus(event.msk, event.duration);
+                const progress = getProgress(event.msk, event.duration);
+                
+                let countdown = '';
+                let countdownLabel = '';
+                
+                if (status === 'upcoming') {
+                    const minutes = getNextEventTime(event.msk);
+                    countdown = formatCountdown(minutes);
+                    countdownLabel = 'до начала';
+                } else if (status === 'active') {
+                    const eventTime = parseTime(event.msk);
+                    const now = new Date();
+                    const eventStart = new Date();
+                    eventStart.setHours(eventTime.hours, eventTime.minutes, eventTime.seconds || 0, 0);
+                    const elapsed = Math.floor((now - eventStart) / (1000 * 60));
+                    const remaining = event.duration - elapsed;
+                    countdown = `${remaining}м`;
+                    countdownLabel = 'осталось';
+                }
+
+                return `
+                    <div class="event-row ${status}">
+                        <div class="event-icon">${event.icon}</div>
+                        
+                        <div class="event-info">
+                            <div class="event-title">${event.title}</div>
+                            <div class="event-type">${event.type}</div>
+                        </div>
+                        
+                        <div class="time-info">
+                            <div class="time-main">${event.msk}</div>
+                            <div class="time-sub">МСК</div>
+                        </div>
+                        
+                        <div class="duration-badge">${event.duration} мин</div>
+                        
+                        <div class="countdown-info">
+                            ${countdown ? `
+                                <div class="countdown-value">${countdown}</div>
+                                <div class="countdown-label">${countdownLabel}</div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="status-indicator ${status}"></div>
+                        
+                        ${status === 'active' ? `<div class="progress-bar" style="width: ${progress}%"></div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('eventsGrid').innerHTML = eventsHtml;
+        }
+
+        function updatePage() {
+            updateCurrentTime();
+            updateQuickStats();
+            renderEvents();
+        }
+
+        // Инициализация и обновление каждую секунду
+        updatePage();
+        setInterval(updatePage, 1000);
+    </script>
+</body>
+</html>
